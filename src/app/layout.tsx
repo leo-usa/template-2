@@ -1,4 +1,6 @@
 import "./globals.css";
+import { DeepgramContextProvider } from '../lib/contexts/DeepgramContext';
+import { AuthProvider } from '../lib/contexts/AuthContext';
 
 export default function RootLayout({
   children,
@@ -7,7 +9,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <AuthProvider>
+        <DeepgramContextProvider>
+          <body>{children}</body>
+        </DeepgramContextProvider>
+      </AuthProvider>
     </html>
   );
 }

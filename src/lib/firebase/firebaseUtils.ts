@@ -11,6 +11,9 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -51,4 +54,16 @@ export const uploadFile = async (file: File, path: string) => {
   const storageRef = ref(storage, path);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
+};
+
+// Listen to notes
+export const listenToNotes = (callback: (notes: any[]) => void) => {
+  const q = query(collection(db, 'notes'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (querySnapshot) => {
+    const notes = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(notes);
+  });
 };

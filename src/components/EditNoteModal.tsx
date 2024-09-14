@@ -1,0 +1,48 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+
+interface EditNoteModalProps {
+  initialText: string;
+  onSave: (text: string) => void;
+  onDiscard: () => void;
+}
+
+export default function EditNoteModal({ initialText, onSave, onDiscard }: EditNoteModalProps) {
+  const [text, setText] = useState(initialText);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+      >
+        <h2 className="text-2xl font-bold mb-4 text-white">Edit Your Note</h2>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full h-40 p-2 mb-4 bg-gray-700 text-white rounded"
+        />
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={onDiscard}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Discard
+          </button>
+          <button
+            onClick={() => onSave(text)}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Save
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}

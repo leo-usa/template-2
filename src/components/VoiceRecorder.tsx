@@ -3,13 +3,32 @@
 import { useState, useEffect } from 'react';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
 import { addDocument } from '../lib/firebase/firebaseUtils';
-import { motion } from 'framer-motion';
+import { Mic, MicOff, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import EditNoteModal from './EditNoteModal';
 
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentTranscript, setCurrentTranscript] = useState('');
   const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
 
+  useEffect(() => {
+    if (realtimeTranscript) {
+      setCurrentTranscript(realtimeTranscript);
+    }
+  }, [realtimeTranscript]);
+
+  const handleToggleRecording = async () => {
+    if (isRecording) {
+      await handleStopRecording();
+    } else {
+      await handleStartRecording();
+    }
+  };
+
   const handleStartRecording = async () => {
+    setCurrentTranscript('');
     await connectToDeepgram();
     setIsRecording(true);
   };
@@ -18,41 +37,77 @@ export default function VoiceRecorder() {
     disconnectFromDeepgram();
     setIsRecording(false);
     
-    // Save the note to Firebase
-    if (realtimeTranscript) {
-      await addDocument('notes', {
-        text: realtimeTranscript,
-        timestamp: new Date().toISOString(),
-      });
+    if (currentTranscript) {
+      setShowEditModal(true);
     }
   };
 
+  const handleSaveNote = async (text: string) => {
+    await addDocument('notes', {
+      text: text,
+      timestamp: new Date().toISOString(),
+    });
+    setShowEditModal(false);
+    setCurrentTranscript('');
+  };
+
+  const handleDiscardNote = () => {
+    setShowEditModal(false);
+    setCurrentTranscript('');
+  };
+
   return (
-    <div className="w-full max-w-md">
-      <button
-        onClick={isRecording ? handleStopRecording : handleStartRecording}
-        className={`w-full py-2 px-4 rounded-full ${
-          isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-        } text-white font-bold`}
-      >
-        {isRecording ? 'Stop Recording' : 'Start Recording'}
-      </button>
-      {isRecording && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4"
-          />
-          <p className="text-sm text-gray-600">{realtimeTranscript}</p>
+    <>
+      <div className="w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-lg">
+        <div className="flex justify-center mb-6">
+          <motion.button
+            onClick={handleToggleRecording}
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isRecording ? 'bg-red-500' : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+            whileTap={{ scale: 0.95 }}
+            animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
+            transition={isRecording ? { repeat: Infinity, duration: 1.5 } : {}}
+          >
+            {isRecording ? (
+              <MicOff className="w-10 h-10 text-white" />
+            ) : (
+              <Mic className="w-10 h-10 text-white" />
+            )}
+          </motion.button>
         </div>
-      )}
-    </div>
+        
+        <div className="text-center mb-4 text-white">
+          {isRecording ? (
+            <div className="flex items-center justify-center space-x-2">
+              <Activity className="w-5 h-5 text-red-500" />
+              <span>Recording...</span>
+            </div>
+          ) : (
+            <span>Press the microphone to start</span>
+          )}
+        </div>
+        
+        <div className="bg-gray-700 rounded p-4 h-48 overflow-auto">
+          {currentTranscript ? (
+            <p className="text-white">{currentTranscript}</p>
+          ) : (
+            <p className="text-gray-400 text-center">
+              Your transcription will appear here...
+            </p>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {showEditModal && (
+          <EditNoteModal
+            initialText={currentTranscript}
+            onSave={handleSaveNote}
+            onDiscard={handleDiscardNote}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
