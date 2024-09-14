@@ -3,6 +3,8 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
 } from "firebase/auth";
 import {
   collection,
@@ -14,6 +16,7 @@ import {
   query,
   orderBy,
   onSnapshot,
+  where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -31,34 +34,29 @@ export const signInWithGoogle = async () => {
   }
 };
 
+export const signInWithEmail = (email: string, password: string) =>
+  signInWithEmailAndPassword(auth, email, password);
+
+export const signUpWithEmail = (email: string, password: string) =>
+  createUserWithEmailAndPassword(auth, email, password);
+
 // Firestore functions
-export const addDocument = (collectionName: string, data: any) =>
-  addDoc(collection(db, collectionName), data);
-
-export const getDocuments = async (collectionName: string) => {
-  const querySnapshot = await getDocs(collection(db, collectionName));
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-};
-
-export const updateDocument = (collectionName: string, id: string, data: any) =>
-  updateDoc(doc(db, collectionName, id), data);
-
-export const deleteDocument = (collectionName: string, id: string) =>
-  deleteDoc(doc(db, collectionName, id));
-
-// Storage functions
-export const uploadFile = async (file: File, path: string) => {
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
-};
+export const addDocument = (collectionName: string, data: any, userId: string) =>
+  addDoc(collection(db, collectionName), { ...data, userId });
 
 // Listen to notes
-export const listenToNotes = (callback: (notes: any[]) => void) => {
-  const q = query(collection(db, 'notes'), orderBy('timestamp', 'desc'));
+export const listenToNotes = (userId: string | null, callback: (notes: any[]) => void) => {
+  let q;
+  if (userId) {
+    q = query(
+      collection(db, 'notes'),
+      where('userId', '==', userId),
+      orderBy('timestamp', 'desc')
+    );
+  } else {
+    q = query(collection(db, 'notes'), orderBy('timestamp', 'desc'));
+  }
+
   return onSnapshot(q, (querySnapshot) => {
     const notes = querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -66,4 +64,11 @@ export const listenToNotes = (callback: (notes: any[]) => void) => {
     }));
     callback(notes);
   });
+};
+
+// Storage functions
+export const uploadFile = async (file: File, path: string) => {
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
 };
