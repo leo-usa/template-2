@@ -20,6 +20,15 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// Add this interface at the top of the file
+interface Note {
+  id: string;
+  text: string;
+  timestamp: string;
+  userId: string;
+  [key: string]: any; // This allows for any additional properties
+}
+
 // Auth functions
 export const logoutUser = () => signOut(auth);
 
@@ -42,27 +51,48 @@ export const signUpWithEmail = (email: string, password: string) =>
 
 // Firestore functions
 export const addDocument = (collectionName: string, data: any, userId: string) =>
-  addDoc(collection(db, collectionName), { ...data, userId });
+  addDoc(collection(db, collectionName), { 
+    ...data, 
+    userId, 
+    timestamp: new Date().toISOString()
+  });
 
 // Listen to notes
-export const listenToNotes = (userId: string | null, callback: (notes: any[]) => void) => {
-  let q;
-  if (userId) {
-    q = query(
-      collection(db, 'notes'),
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc')
-    );
-  } else {
-    q = query(collection(db, 'notes'), orderBy('timestamp', 'desc'));
-  }
+export const listenToNotes = (userId: string, callback: (notes: Note[]) => void) => {
+  console.log("Setting up listener for user:", userId);
+  const q = query(
+    collection(db, 'notes'),
+    where('userId', '==', userId),
+    orderBy('timestamp', 'desc')
+  );
 
   return onSnapshot(q, (querySnapshot) => {
-    const notes = querySnapshot.docs.map(doc => ({
+    console.log("Snapshot received");
+    const notes: Note[] = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    } as Note));
+    console.log("Processed notes:", notes);
     callback(notes);
+  }, (error) => {
+    console.error("Error fetching notes:", error);
+    console.log("Falling back to unordered query.");
+    const fallbackQuery = query(
+      collection(db, 'notes'),
+      where('userId', '==', userId)
+    );
+    onSnapshot(fallbackQuery, (fallbackSnapshot) => {
+      const fallbackNotes: Note[] = fallbackSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Note));
+      console.log("Fallback notes:", fallbackNotes);
+      fallbackNotes.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      callback(fallbackNotes);
+    }, (fallbackError) => {
+      console.error("Fallback query error:", fallbackError);
+      callback([]);
+    });
   });
 };
 

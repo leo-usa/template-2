@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { listenToNotes } from '../lib/firebase/firebaseUtils';
 import { format } from 'date-fns';
 import { useAuth } from '../lib/hooks/useAuth';
+import { useNotes } from '../lib/hooks/useNotes';
 
 interface Note {
   id: string;
@@ -13,16 +12,10 @@ interface Note {
 }
 
 export default function NotesList() {
-  const [notes, setNotes] = useState<Note[]>([]);
   const { user } = useAuth();
+  const { notes } = useNotes();
 
-  useEffect(() => {
-    const unsubscribe = listenToNotes(user ? user.uid : null, (updatedNotes: Note[]) => {
-      setNotes(updatedNotes);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  console.log("Rendering NotesList, notes:", notes); // Debug log
 
   if (!user) {
     return (
@@ -34,13 +27,13 @@ export default function NotesList() {
 
   return (
     <div className="w-full max-w-md mt-8">
-      <h2 className="text-2xl font-bold mb-4 text-center">Your Notes</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center text-white">Your Notes</h2>
       {notes.length === 0 ? (
         <p className="text-white text-center">You haven't created any notes yet.</p>
       ) : (
         <ul className="space-y-4">
-          {notes.map((note) => (
-            <li key={note.id} className="bg-gray-800 shadow rounded-lg p-4">
+          {notes.map((note: Note) => (
+            <li key={`${note.id}-${note.timestamp}`} className="bg-gray-800 shadow rounded-lg p-4">
               <p className="text-sm text-gray-400 mb-2">
                 {format(new Date(note.timestamp), 'MMMM d, yyyy h:mm a')}
               </p>

@@ -7,6 +7,7 @@ import { Mic, MicOff, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditNoteModal from './EditNoteModal';
 import { useAuth } from '../lib/hooks/useAuth';
+import { useNotes } from '../lib/hooks/useNotes'; // We'll create this hook
 
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -14,6 +15,7 @@ export default function VoiceRecorder() {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
   const { user } = useAuth();
+  const { addNote } = useNotes(); // Use the new hook
 
   useEffect(() => {
     if (realtimeTranscript) {
@@ -46,12 +48,22 @@ export default function VoiceRecorder() {
 
   const handleSaveNote = async (text: string) => {
     if (user) {
-      await addDocument('notes', {
-        text: text,
-        timestamp: new Date().toISOString(),
-      }, user.uid);
-      setShowEditModal(false);
-      setCurrentTranscript('');
+      try {
+        const newNote = {
+          id: '', // This will be set by Firebase
+          text: text,
+          timestamp: new Date().toISOString(),
+          userId: user.uid
+        };
+        const docRef = await addDocument('notes', newNote, user.uid);
+        newNote.id = docRef.id; // Set the id from the newly created document
+        addNote(newNote); // Update local state immediately
+        setShowEditModal(false);
+        setCurrentTranscript('');
+      } catch (error) {
+        console.error("Error saving note:", error);
+        // Optionally, show an error message to the user
+      }
     }
   };
 
