@@ -29,7 +29,7 @@ export default function NotesList() {
     <div className="w-full max-w-md mt-8">
       <h2 className="text-2xl font-bold mb-4 text-center text-white">Your Notes</h2>
       {notes.length === 0 ? (
-        <p className="text-white text-center">You haven't created any notes yet.</p>
+        <p className="text-white text-center">You haven&apos;t created any notes yet.</p>
       ) : (
         <ul className="space-y-4">
           {notes.map((note: Note) => (
