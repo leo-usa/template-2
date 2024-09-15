@@ -3,16 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
 import { addDocument } from '../lib/firebase/firebaseUtils';
-import { Mic, MicOff, Activity } from 'lucide-react';
+import { Mic, MicOff, Activity, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditNoteModal from './EditNoteModal';
 import { useAuth } from '../lib/hooks/useAuth';
 import { useNotes } from '../lib/hooks/useNotes'; // We'll create this hook
 
+const languages = [
+  { code: 'en', name: 'English' },
+  { code: 'zh-CN', name: '简体中文' },
+  { code: 'zh-TW', name: '繁体中文' },
+];
+
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
   const { user } = useAuth();
   const { addNote } = useNotes(); // Use the new hook
@@ -33,7 +40,7 @@ export default function VoiceRecorder() {
 
   const handleStartRecording = async () => {
     setCurrentTranscript('');
-    await connectToDeepgram();
+    await connectToDeepgram(selectedLanguage);
     setIsRecording(true);
   };
 
@@ -77,6 +84,25 @@ export default function VoiceRecorder() {
       <div className="w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-lg">
         {user ? (
           <>
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="appearance-none bg-gray-700 text-white py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600"
+                  disabled={isRecording}
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+                  <Globe className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
             <div className="flex justify-center mb-6">
               <motion.button
                 onClick={handleToggleRecording}
