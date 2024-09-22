@@ -49,7 +49,7 @@ export default function AuthPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <Card className="w-[350px] bg-gray-800 text-white">
         <CardHeader>
-          <CardTitle>Welcome to Dr. Pang&apos;s Voice Notes App</CardTitle>
+          <CardTitle>Welcome to Mind Memo</CardTitle>
           <CardDescription className="text-gray-400">Sign in or create an account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -61,8 +61,8 @@ export default function AuthPage() {
             <TabsContent value="signin">
               <form onSubmit={handleEmailSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-700 text-white" />
+                  <Label htmlFor="email">Email or Phone Number</Label>
+                  <Input id="email" type="text" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-700 text-white" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -74,8 +74,8 @@ export default function AuthPage() {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-700 text-white" />
+                  <Label htmlFor="signup-email">Email or Phone Number</Label>
+                  <Input id="signup-email" type="text" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-700 text-white" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
