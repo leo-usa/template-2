@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
 import { useAuth } from '../lib/hooks/useAuth';
 import { useNotes } from '../lib/hooks/useNotes';
 import EditNoteModal from './EditNoteModal';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { addDocument } from '../lib/firebase/firebaseUtils';
-import { useLanguage } from '../lib/contexts/LanguageContext';
+import { useLanguage, LanguageKey } from '../lib/contexts/LanguageContext';
 
 interface Note {
   id: string;
@@ -158,6 +157,18 @@ export default function NotesList() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit'
+    };
+    return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : language, options).format(date);
+  };
+
   if (!user) {
     return (
       <div className="w-full max-w-md mt-8 text-center">
@@ -200,7 +211,7 @@ export default function NotesList() {
                   onChange={() => handleNoteSelect(note.id)}
                 />
                 <label htmlFor={`note-${note.id}`} className="ml-2 text-sm text-gray-400">
-                  {format(new Date(note.timestamp), 'MMMM d, yyyy h:mm a')}
+                  {formatDate(note.timestamp)}
                 </label>
               </div>
               <p className="text-white whitespace-pre-line">{note.text}</p>
