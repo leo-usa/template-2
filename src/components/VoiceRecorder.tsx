@@ -7,7 +7,8 @@ import { Mic, MicOff, Activity, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditNoteModal from './EditNoteModal';
 import { useAuth } from '../lib/hooks/useAuth';
-import { useNotes } from '../lib/hooks/useNotes'; // We'll create this hook
+import { useNotes } from '../lib/hooks/useNotes';
+import { useLanguage, LanguageKey } from '../lib/contexts/LanguageContext';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -15,147 +16,162 @@ const languages = [
   { code: 'zh-TW', name: '繁体中文' },
 ];
 
+const translations = {
+  en: {
+    startRecording: "Start Recording",
+    stopRecording: "Stop Recording",
+    selectLanguage: "Select Language",
+    editNote: "Edit Note",
+    saveNote: "Save Note",
+    discardNote: "Discard",
+    processingAudio: "Processing audio...",
+    errorSaving: "Error saving note. Please try again.",
+  },
+  'zh-CN': {
+    startRecording: "开始录音",
+    stopRecording: "停止录音",
+    selectLanguage: "选择语言",
+    editNote: "编辑笔记",
+    saveNote: "保存笔记",
+    discardNote: "放弃",
+    processingAudio: "正在处理音频...",
+    errorSaving: "保存笔记时出错。请重试。",
+  },
+  'zh-TW': {
+    startRecording: "開始錄音",
+    stopRecording: "停止錄音",
+    selectLanguage: "選擇語言",
+    editNote: "編輯筆記",
+    saveNote: "保存筆記",
+    discardNote: "放棄",
+    processingAudio: "正在處理音頻...",
+    errorSaving: "保存筆記時出錯。請重試。",
+  },
+};
+
 export default function VoiceRecorder() {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   const [isRecording, setIsRecording] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [currentTranscript, setCurrentTranscript] = useState('');
+  const [transcription, setTranscription] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+
   const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
   const { user } = useAuth();
-  const { addNote } = useNotes(); // Use the new hook
+  const { addNote } = useNotes();
 
   useEffect(() => {
-    if (realtimeTranscript) {
-      setCurrentTranscript(realtimeTranscript);
-    }
+    setTranscription(realtimeTranscript);
   }, [realtimeTranscript]);
 
-  const handleToggleRecording = async () => {
-    if (isRecording) {
-      await handleStopRecording();
-    } else {
-      await handleStartRecording();
-    }
-  };
-
   const handleStartRecording = async () => {
-    setCurrentTranscript('');
-    await connectToDeepgram(selectedLanguage);
     setIsRecording(true);
+    setTranscription('');
+    await connectToDeepgram(selectedLanguage);
   };
 
-  const handleStopRecording = async () => {
-    disconnectFromDeepgram();
+  const handleStopRecording = () => {
     setIsRecording(false);
-    
-    if (currentTranscript) {
-      setShowEditModal(true);
-    }
+    disconnectFromDeepgram();
+    setShowEditModal(true);
   };
 
   const handleSaveNote = async (text: string) => {
     if (user) {
+      setIsProcessing(true);
       try {
         const newNote = {
-          id: '', // This will be set by Firebase
+          id: '',
           text: text,
           timestamp: new Date().toISOString(),
           userId: user.uid
         };
+
         const docRef = await addDocument('notes', newNote, user.uid);
-        newNote.id = docRef.id; // Set the id from the newly created document
-        addNote(newNote); // Update local state immediately
+
+        if (!docRef || !docRef.id) {
+          throw new Error('Failed to get document reference ID');
+        }
+
+        newNote.id = docRef.id;
+        addNote(newNote);
         setShowEditModal(false);
-        setCurrentTranscript('');
+        setTranscription('');
+        setError('');
       } catch (error) {
         console.error("Error saving note:", error);
-        // Optionally, show an error message to the user
+        setError(t.errorSaving);
+      } finally {
+        setIsProcessing(false);
       }
     }
   };
 
-  const handleDiscardNote = () => {
-    setShowEditModal(false);
-    setCurrentTranscript('');
-  };
-
   return (
-    <>
-      <div className="w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-lg">
-        {user ? (
-          <>
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="appearance-none bg-gray-700 text-white py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600"
-                  disabled={isRecording}
-                >
-                  {languages.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-                  <Globe className="h-4 w-4" />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center mb-6">
-              <motion.button
-                onClick={handleToggleRecording}
-                className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isRecording ? 'bg-red-500' : 'bg-blue-500 hover:bg-blue-600'
-                }`}
-                whileTap={{ scale: 0.95 }}
-                animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
-                transition={isRecording ? { repeat: Infinity, duration: 1.5 } : {}}
-              >
-                {isRecording ? (
-                  <MicOff className="w-10 h-10 text-white" />
-                ) : (
-                  <Mic className="w-10 h-10 text-white" />
-                )}
-              </motion.button>
-            </div>
-            
-            <div className="text-center mb-4 text-white">
-              {isRecording ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <Activity className="w-5 h-5 text-red-500" />
-                  <span>Recording...</span>
-                </div>
-              ) : (
-                <span>Press the microphone to start</span>
-              )}
-            </div>
-            
-            <div className="bg-gray-700 rounded p-4 h-48 overflow-auto">
-              {currentTranscript ? (
-                <p className="text-white">{currentTranscript}</p>
-              ) : (
-                <p className="text-gray-400 text-center">
-                  Your transcription will appear here...
-                </p>
-              )}
-            </div>
-          </>
-        ) : (
-          <p className="text-white text-center">Please sign in to use the voice recorder.</p>
-        )}
+    <div className="w-full max-w-md mx-auto mt-8">
+      <div className="mb-4 flex justify-between items-center">
+        <button
+          onClick={isRecording ? handleStopRecording : handleStartRecording}
+          className={`flex items-center justify-center p-4 rounded-full ${
+            isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
+          } text-white font-bold transition-colors duration-300`}
+        >
+          {isRecording ? (
+            <>
+              <MicOff className="mr-2" />
+              {t.stopRecording}
+            </>
+          ) : (
+            <>
+              <Mic className="mr-2" />
+              {t.startRecording}
+            </>
+          )}
+        </button>
+        <div className="flex items-center">
+          <Globe className="mr-2 text-gray-400" />
+          <select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            className="bg-gray-800 text-white rounded p-2"
+          >
+            {languages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-
       <AnimatePresence>
-        {showEditModal && (
-          <EditNoteModal
-            initialText={currentTranscript}
-            onSave={handleSaveNote}
-            onDiscard={handleDiscardNote}
-          />
+        {isRecording && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-gray-800 p-4 rounded-lg shadow-lg"
+          >
+            <div className="flex items-center mb-2">
+              <Activity className="text-green-500 mr-2" />
+              <span className="text-white font-semibold">Recording...</span>
+            </div>
+            <p className="text-gray-300 whitespace-pre-wrap">{transcription}</p>
+          </motion.div>
         )}
       </AnimatePresence>
-    </>
+      {showEditModal && (
+        <EditNoteModal
+          initialText={transcription}
+          onSave={handleSaveNote}
+          onDiscard={() => setShowEditModal(false)}
+        />
+      )}
+      {isProcessing && <p className="text-yellow-500 mt-2">{t.processingAudio}</p>}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+    </div>
   );
 }
