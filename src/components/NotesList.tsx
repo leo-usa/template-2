@@ -24,6 +24,7 @@ export default function NotesList() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [error, setError] = useState(''); // Add this line
 
   useEffect(() => {
     if (selectAll) {
@@ -114,10 +115,10 @@ export default function NotesList() {
         addNote(newNote);
         setShowEditModal(false);
         setSummaryText('');
+        setError(''); // Clear any previous errors
         console.log("Summary saved successfully");
       } catch (error) {
         console.error("Error saving summary note:", error);
-        // Optionally, show an error message to the user
         setError("Failed to save the summary. Please try again.");
       }
     } else {
@@ -137,12 +138,13 @@ export default function NotesList() {
   return (
     <div className="w-full max-w-md mt-8">
       <h2 className="text-2xl font-bold mb-4 text-center text-white">Your Notes</h2>
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>} {/* Add this line to display errors */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center">
           <Checkbox
             id="select-all"
             checked={selectAll}
-            onCheckedChange={(checked) => setSelectAll(checked as boolean)}
+            onChange={(e) => setSelectAll(e.target.checked)}
           />
           <label htmlFor="select-all" className="ml-2 text-white">Select All</label>
         </div>
@@ -155,7 +157,7 @@ export default function NotesList() {
         </Button>
       </div>
       {notes.length === 0 ? (
-        <p className="text-white text-center">You haven't created any notes yet.</p>
+        <p>Couldn&apos;t load notes. Please try again.</p>
       ) : (
         <ul className="space-y-4">
           {notes.map((note: Note) => (
@@ -164,7 +166,7 @@ export default function NotesList() {
                 <Checkbox
                   id={`note-${note.id}`}
                   checked={selectedNotes.includes(note.id)}
-                  onCheckedChange={() => handleNoteSelect(note.id)}
+                  onChange={() => handleNoteSelect(note.id)}
                 />
                 <label htmlFor={`note-${note.id}`} className="ml-2 text-sm text-gray-400">
                   {format(new Date(note.timestamp), 'MMMM d, yyyy h:mm a')}
