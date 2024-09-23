@@ -8,6 +8,7 @@ import { Label } from "./ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useAuth } from '../lib/hooks/useAuth'
+import { useLanguage, LanguageKey } from '../lib/contexts/LanguageContext'
 
 const translations = {
   en: {
@@ -42,13 +43,11 @@ const translations = {
   },
 } as const
 
-type LanguageKey = keyof typeof translations
-
 export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [language, setLanguage] = useState<LanguageKey>('en')
+  const { language, setLanguage } = useLanguage()
   const { user } = useAuth()
 
   const t = translations[language]

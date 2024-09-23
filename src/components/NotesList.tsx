@@ -8,6 +8,7 @@ import EditNoteModal from './EditNoteModal';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { addDocument } from '../lib/firebase/firebaseUtils';
+import { useLanguage } from '../lib/contexts/LanguageContext';
 
 interface Note {
   id: string;
@@ -16,7 +17,37 @@ interface Note {
   userId: string;
 }
 
+const translations = {
+  en: {
+    yourNotes: "Your Notes",
+    selectAll: "Select All",
+    summarize: "Summarize to Medical Note",
+    processing: "Processing...",
+    noNotes: "Couldn't load notes. Please try again.",
+    signInToView: "Please sign in to view your notes.",
+  },
+  'zh-CN': {
+    yourNotes: "您的笔记",
+    selectAll: "全选",
+    summarize: "总结为医疗笔记",
+    processing: "处理中...",
+    noNotes: "无法加载笔记。请重试。",
+    signInToView: "请登录以查看您的笔记。",
+  },
+  'zh-TW': {
+    yourNotes: "您的筆記",
+    selectAll: "全選",
+    summarize: "總結為醫療筆記",
+    processing: "處理中...",
+    noNotes: "無法加載筆記。請重試。",
+    signInToView: "請登錄以查看您的筆記。",
+  },
+};
+
 export default function NotesList() {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   const { user } = useAuth();
   const { notes, addNote } = useNotes();
   const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
@@ -24,7 +55,7 @@ export default function NotesList() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [error, setError] = useState(''); // Add this line
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (selectAll) {
@@ -130,15 +161,15 @@ export default function NotesList() {
   if (!user) {
     return (
       <div className="w-full max-w-md mt-8 text-center">
-        <p className="text-white">Please sign in to view your notes.</p>
+        <p className="text-white">{t.signInToView}</p>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-md mt-8">
-      <h2 className="text-2xl font-bold mb-4 text-center text-white">Your Notes</h2>
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>} {/* Add this line to display errors */}
+      <h2 className="text-2xl font-bold mb-4 text-center text-white">{t.yourNotes}</h2>
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center">
           <Checkbox
@@ -146,18 +177,18 @@ export default function NotesList() {
             checked={selectAll}
             onChange={(e) => setSelectAll(e.target.checked)}
           />
-          <label htmlFor="select-all" className="ml-2 text-white">Select All</label>
+          <label htmlFor="select-all" className="ml-2 text-white">{t.selectAll}</label>
         </div>
         <Button 
           onClick={handleSummarize} 
           disabled={isProcessing || (notes.length === 0)}
           className="bg-blue-500 hover:bg-blue-600"
         >
-          {isProcessing ? 'Processing...' : 'Summarize to Medical Note'}
+          {isProcessing ? t.processing : t.summarize}
         </Button>
       </div>
       {notes.length === 0 ? (
-        <p>Couldn&apos;t load notes. Please try again.</p>
+        <p>{t.noNotes}</p>
       ) : (
         <ul className="space-y-4">
           {notes.map((note: Note) => (
