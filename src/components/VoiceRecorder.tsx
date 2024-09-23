@@ -26,6 +26,7 @@ const translations = {
     discardNote: "Discard",
     processingAudio: "Processing audio...",
     errorSaving: "Error saving note. Please try again.",
+    recording: "Recording...",
   },
   'zh-CN': {
     startRecording: "开始录音",
@@ -36,6 +37,7 @@ const translations = {
     discardNote: "放弃",
     processingAudio: "正在处理音频...",
     errorSaving: "保存笔记时出错。请重试。",
+    recording: "录音中...",
   },
   'zh-TW': {
     startRecording: "開始錄音",
@@ -46,6 +48,7 @@ const translations = {
     discardNote: "放棄",
     processingAudio: "正在處理音頻...",
     errorSaving: "保存筆記時出錯。請重試。",
+    recording: "錄音中...",
   },
 };
 
@@ -55,7 +58,7 @@ export default function VoiceRecorder() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>(language);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -67,6 +70,10 @@ export default function VoiceRecorder() {
   useEffect(() => {
     setTranscription(realtimeTranscript);
   }, [realtimeTranscript]);
+
+  useEffect(() => {
+    setSelectedLanguage(language);
+  }, [language]);
 
   const handleStartRecording = async () => {
     setIsRecording(true);
@@ -136,7 +143,7 @@ export default function VoiceRecorder() {
           <Globe className="mr-2 text-gray-400" />
           <select
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={(e) => setSelectedLanguage(e.target.value as LanguageKey)}
             className="bg-gray-800 text-white rounded p-2"
           >
             {languages.map((lang) => (
@@ -157,7 +164,7 @@ export default function VoiceRecorder() {
           >
             <div className="flex items-center mb-2">
               <Activity className="text-green-500 mr-2" />
-              <span className="text-white font-semibold">Recording...</span>
+              <span className="text-white font-semibold">{t.recording}</span>
             </div>
             <p className="text-gray-300 whitespace-pre-wrap">{transcription}</p>
           </motion.div>
