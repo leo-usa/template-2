@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Button } from './ui/button';
+import { useLanguage } from '../lib/contexts/LanguageContext';
 
 interface EditNoteModalProps {
   initialText: string;
@@ -8,9 +8,38 @@ interface EditNoteModalProps {
   onDiscard: () => void;
 }
 
+const translations = {
+  en: {
+    editNote: "Edit Note",
+    save: "Save",
+    discard: "Discard",
+    processing: "Processing...",
+    aiRewrite: "AI Rewrite",
+    translate: "Translate",
+  },
+  'zh-CN': {
+    editNote: "编辑笔记",
+    save: "保存",
+    discard: "放弃",
+    processing: "处理中...",
+    aiRewrite: "AI重写",
+    translate: "翻译成英文",
+  },
+  'zh-TW': {
+    editNote: "編輯筆記",
+    save: "保存",
+    discard: "放棄",
+    processing: "處理中...",
+    aiRewrite: "AI重寫",
+    translate: "翻譯成英文",
+  },
+};
+
 export default function EditNoteModal({ initialText, onSave, onDiscard }: EditNoteModalProps) {
   const [text, setText] = useState(initialText);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   const handleAIRewrite = async () => {
     setIsProcessing(true);
@@ -87,67 +116,33 @@ export default function EditNoteModal({ initialText, onSave, onDiscard }: EditNo
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.9 }}
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Edit Note</h2>
-          <button onClick={onDiscard} className="text-gray-400 hover:text-white">
-            <X size={24} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
+        <h2 className="text-2xl font-bold mb-4 text-white">{t.editNote}</h2>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="w-full h-48 p-2 mb-4 bg-gray-700 text-white rounded"
+          className="w-full h-64 p-2 mb-4 bg-gray-700 text-white rounded"
         />
         <div className="flex justify-between">
           <div>
-            <button
-              onClick={handleAIRewrite}
-              disabled={isProcessing}
-              className="bg-blue-500 text-white px-4 py-2 rounded mr-2 hover:bg-blue-600 disabled:opacity-50"
-            >
-              AI Rewrite
-            </button>
-            <button
-              onClick={handleTranslate}
-              disabled={isProcessing}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-            >
-              Translate
-            </button>
+            <Button onClick={handleAIRewrite} className="mr-2 bg-purple-500 hover:bg-purple-600" disabled={isProcessing}>
+              {t.aiRewrite}
+            </Button>
+            <Button onClick={handleTranslate} className="bg-green-500 hover:bg-green-600" disabled={isProcessing}>
+              {t.translate}
+            </Button>
           </div>
           <div>
-            <button
-              onClick={() => onSave(text)}
-              className="bg-green-500 text-white px-4 py-2 rounded mr-2 hover:bg-green-600"
-            >
-              Save
-            </button>
-            <button
-              onClick={onDiscard}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Discard
-            </button>
+            <Button onClick={() => onSave(text)} className="mr-2 bg-blue-500 hover:bg-blue-600" disabled={isProcessing}>
+              {isProcessing ? t.processing : t.save}
+            </Button>
+            <Button onClick={onDiscard} variant="outline" className="bg-red-500 hover:bg-red-600" disabled={isProcessing}>
+              {t.discard}
+            </Button>
           </div>
         </div>
-        {isProcessing && (
-          <div className="mt-4 text-center text-white">
-            Processing...
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
